@@ -1,3 +1,5 @@
+// // src/types/User.ts
+
 export type User = {
     name: string;
     username: string;
@@ -5,4 +7,5 @@ export type User = {
     photo: string;
     role: string;
     mobileNumber: string | number;
+    password:string;
 }
