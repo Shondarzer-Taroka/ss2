@@ -1,16 +1,21 @@
 import { Response, Request } from 'express';
 import { db } from '../config/db';
 import { User } from '../types/User'; // Import the User type
+import bcrypt from 'bcrypt'; // Import bcrypt for password hashing
 
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { name, username, email, photo, role, mobileNumber,password }: User = req.body;
+        const { name, username, email, photo, role, mobileNumber, password }: User = req.body;
 
         // Input validation
         if (!name || !username || !email || !role || !password) {
-            res.status(400).json({ error: 'Name, username, email, and password are required' });
+            res.status(400).json({ error: 'Name, username, email, role, and password are required' });
             return;
         }
+
+        // Hash the password using bcrypt
+        const saltRounds = 10; // Number of salt rounds for hashing
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         // Ensure the users table exists with the correct schema
         await db.query(`
@@ -22,14 +27,14 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
                 photo VARCHAR(255),
                 role VARCHAR(50) NOT NULL,
                 mobileNumber VARCHAR(15),
-                password VARCHAR(255) NOT NULL UNIQUE
+                password VARCHAR(255) NOT NULL
             )
         `);
 
         // Insert the new user into the users table
         const [result] = await db.query(
-            'INSERT INTO users (name, username, email, photo, role, mobileNumber,password) VALUES (?, ?, ?, ?, ?, ?)',
-            [name, username, email, photo, role, mobileNumber]
+            'INSERT INTO users (name, username, email, photo, role, mobileNumber, password) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [name, username, email, photo, role, mobileNumber, hashedPassword]
         );
 
         res.status(201).json({
@@ -41,9 +46,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
                 email,
                 photo,
                 role,
-                password,
                 mobileNumber,
-                
             },
         });
     } catch (error) {
